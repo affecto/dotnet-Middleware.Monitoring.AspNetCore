@@ -4,6 +4,10 @@
     <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Affecto.Middleware.Monitoring.AspNetCore</AssemblyName>
     <RootNamespace>Affecto.Middleware.Monitoring.AspNetCore</RootNamespace>
+	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	<Version>1.0.0-prerelease01</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
