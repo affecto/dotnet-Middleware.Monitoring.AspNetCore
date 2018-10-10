@@ -9,19 +9,12 @@ namespace Affecto.Middleware.Monitoring.AspNetCore
     {
         private readonly RequestDelegate next;
         private readonly Func<IHealthCheckService> healthCheckServiceFactory;
-
         private readonly PathString monitorPath;
         private readonly PathString monitorShallowPath;
         private readonly PathString monitorDeepPath;
 
-
         public MonitoringMiddleware(RequestDelegate next, string routePrefix = null, Func<IHealthCheckService> healthCheckServiceFactory = null)
         {
-            if (next == null)
-            {
-                throw new ArgumentNullException(nameof(next));
-            }
-
             if (string.IsNullOrWhiteSpace(routePrefix))
             {
                 routePrefix = string.Empty;
@@ -35,7 +28,7 @@ namespace Affecto.Middleware.Monitoring.AspNetCore
             monitorShallowPath = new PathString(routePrefix + "/_monitor/shallow");
             monitorDeepPath = new PathString(routePrefix + "/_monitor/deep");
 
-            this.next = next;
+            this.next = next ?? throw new ArgumentNullException(nameof(next));
             this.healthCheckServiceFactory = healthCheckServiceFactory;
         }
 
