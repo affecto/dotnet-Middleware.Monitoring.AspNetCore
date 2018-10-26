@@ -7,7 +7,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Middleware for implementing monitoring endpoints in ASP.NET Web Api.</Description>
     <Company>Affecto</Company>
-    <Version>3.0.0-prerelease01</Version>
+    <Version>3.0.0</Version>
     <AssemblyVersion>3.0.0.0</AssemblyVersion>
     <FileVersion>3.0.0.0</FileVersion>
     <Authors>Affecto</Authors>
