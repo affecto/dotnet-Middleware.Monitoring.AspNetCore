@@ -7,13 +7,13 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Middleware for implementing monitoring endpoints in ASP.NET Web Api.</Description>
     <Company>Affecto</Company>
-    <Version>2.0.0</Version>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
+    <Version>3.0.0</Version>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <FileVersion>3.0.0.0</FileVersion>
     <Authors>Affecto</Authors>
     <PackageProjectUrl>https://github.com/affecto/dotnet-Middleware.Monitoring.AspNetCore</PackageProjectUrl>
     <PackageTags>affecto monitoring monitor middleware aspnet core</PackageTags>
-    <PackageReleaseNotes>Changed project type to .NET Standard.</PackageReleaseNotes>
+    <PackageReleaseNotes>Separated shallow and deep monitoring middlewares. Inject health check service factory into the Invoke method to use correct lifetime scope for the service.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
