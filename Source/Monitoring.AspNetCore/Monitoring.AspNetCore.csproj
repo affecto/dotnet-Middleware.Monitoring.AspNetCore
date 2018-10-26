@@ -13,7 +13,7 @@
     <Authors>Affecto</Authors>
     <PackageProjectUrl>https://github.com/affecto/dotnet-Middleware.Monitoring.AspNetCore</PackageProjectUrl>
     <PackageTags>affecto monitoring monitor middleware aspnet core</PackageTags>
-    <PackageReleaseNotes>Changed project type to .NET Standard.</PackageReleaseNotes>
+    <PackageReleaseNotes>Separated shallow and deep monitoring middlewares. Inject health check service factory into the Invoke method to use correct lifetime scope for the service.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
