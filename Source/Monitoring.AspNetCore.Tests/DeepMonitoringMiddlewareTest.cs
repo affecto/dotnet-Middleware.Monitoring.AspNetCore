@@ -36,7 +36,7 @@ namespace Monitoring.AspNetCore.Tests
         }
 
         [Fact]
-        public async void DeepPathReturns503()
+        public async void DeepPathReturns503WithExceptionMessage()
         {
             var builder = new WebHostBuilder()
                 .ConfigureServices(s => s.AddSingleton(GetHealthCheckServiceFactoryFor(FailureHealthCheckAsync)))
@@ -51,6 +51,25 @@ namespace Monitoring.AspNetCore.Tests
 
                 string message = await response.Content.ReadAsStringAsync();
                 Assert.Equal(ErrorMessage, message);
+            }
+        }
+
+        [Fact]
+        public async void DeepPathReturns503WhenFactoryThrowsException()
+        {
+            var builder = new WebHostBuilder()
+                .ConfigureServices(s => s.AddSingleton(GetExceptionThrowingHealthCheckServiceFactory(ErrorMessage)))
+                .Configure(app => { app.UseDeepMonitoring(); });
+
+            using (TestServer server = new TestServer(builder))
+            {
+                HttpClient client = server.CreateClient();
+
+                HttpResponseMessage response = await client.GetAsync("/_monitor/deep");
+                Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+
+                string message = await response.Content.ReadAsStringAsync();
+                Assert.Equal($"Creating health check service failed: {ErrorMessage}", message);
             }
         }
 
@@ -97,6 +116,12 @@ namespace Monitoring.AspNetCore.Tests
             IHealthCheckService mockHealthCheckService = Substitute.For<IHealthCheckService>();
             mockHealthCheckService.CheckHealthAsync().Returns(checkHealthAsync());
             IHealthCheckService HealthCheckServiceFactory() => mockHealthCheckService;
+            return HealthCheckServiceFactory;
+        }
+
+        private static Func<IHealthCheckService> GetExceptionThrowingHealthCheckServiceFactory(string errorMessage)
+        {
+            IHealthCheckService HealthCheckServiceFactory() => throw new Exception(errorMessage);
             return HealthCheckServiceFactory;
         }
 
