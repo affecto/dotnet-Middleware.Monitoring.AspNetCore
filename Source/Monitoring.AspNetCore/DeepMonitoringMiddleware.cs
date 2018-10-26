@@ -30,33 +30,49 @@ namespace Affecto.Middleware.Monitoring.AspNetCore
         {
             if (healthCheckServiceFactory == null)
             {
+                await ReturnErrorMessage(context, "No health check service factory available.");
+                return;
+            }
+
+            IHealthCheckService healthCheckService;
+
+            try
+            {
+                healthCheckService = healthCheckServiceFactory();
+            }
+            catch (Exception e)
+            {
+                await ReturnErrorMessage(context, $"Creating health check service failed: {e.Message}");
+                return;
+            }
+
+            try
+            {
+                await healthCheckService.CheckHealthAsync().ConfigureAwait(false);
                 context.Response.StatusCode = StatusCodes.Status204NoContent;
             }
-            else
+            catch (Exception e)
             {
-                try
-                {
-                    await healthCheckServiceFactory().CheckHealthAsync().ConfigureAwait(false);
-                    context.Response.StatusCode = StatusCodes.Status204NoContent;
-                }
-                catch (Exception e)
-                {
-                    string message;
+                string message;
 
-                    if (e is AggregateException && e.InnerException != null)
-                    {
-                        message = e.InnerException.Message;
-                    }
-                    else
-                    {
-                        message = e.Message;
-                    }
-
-                    context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-                    context.Response.ContentType = "text/plain";
-                    await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(message), 0, message.Length);
+                if (e is AggregateException && e.InnerException != null)
+                {
+                    message = e.InnerException.Message;
                 }
+                else
+                {
+                    message = e.Message;
+                }
+
+                await ReturnErrorMessage(context, message);
             }
+        }
+
+        private static async Task ReturnErrorMessage(HttpContext context, string message)
+        {
+            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            context.Response.ContentType = "text/plain";
+            await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(message), 0, message.Length).ConfigureAwait(false);
         }
     }
 }
