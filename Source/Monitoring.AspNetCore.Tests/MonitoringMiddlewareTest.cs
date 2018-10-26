@@ -3,9 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Affecto.Middleware.Monitoring.AspNetCore;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
@@ -15,89 +13,63 @@ namespace Monitoring.AspNetCore.Tests
 {
     public class MonitoringMiddlewareTest
     {
-        [Fact]
-        public async void ShallowPathReturns204()
-        {
-            var builder = new WebHostBuilder()
-                .Configure(app =>
-                {
-                    app.UseMiddleware<MockMonitoringMiddleware>();
-                });
-
-            using (var server = new TestServer(builder))
-            {
-                var client = server.CreateClient();
-                HttpResponseMessage response = await client.GetAsync("/_monitor/shallow");
-                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-            }
-        }
+        private const string RoutePrefix = "SomeCustomRoute";
 
         [Fact]
-        public async void DeepPathReturns204()
+        public async void ShallowAndDeepPathReturn204Together()
         {
             var builder = new WebHostBuilder()
                 .ConfigureServices(s => s.AddSingleton(GetHealthCheckServiceFactoryFor(SuccessHealthCheckAsync)))
-                .Configure(app =>
-                {
-                    app.UseMiddleware<MockMonitoringMiddleware>();
-                });
+                .Configure(app => { app.UseMonitoring(); });
 
-            using (var server = new TestServer(builder))
+            using (TestServer server = new TestServer(builder))
             {
-                var client = server.CreateClient();
+                HttpClient client = server.CreateClient();
 
-                HttpResponseMessage response = await client.GetAsync("/_monitor/deep");
+                HttpResponseMessage response = await client.GetAsync("/_monitor/shallow");
                 Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-                var msg = await response.Content.ReadAsStringAsync();
-                Assert.Equal(string.Empty, msg);
+
+                response = await client.GetAsync("/_monitor/deep");
+                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+                string message = await response.Content.ReadAsStringAsync();
+                Assert.Equal(string.Empty, message);
             }
         }
 
         [Fact]
-        public async void DeepPathReturns503()
+        public async void ShallowAndDeepPathUseRoutePrefixTogether()
         {
             var builder = new WebHostBuilder()
-                .ConfigureServices(s => s.AddSingleton(GetHealthCheckServiceFactoryFor(FailureHealthCheckAsync)))
-                .Configure(app =>
-                {
-                    app.UseMiddleware<MockMonitoringMiddleware>();
-                });
+                .ConfigureServices(s => s.AddSingleton(GetHealthCheckServiceFactoryFor(SuccessHealthCheckAsync)))
+                .Configure(app => { app.UseMonitoring(RoutePrefix); });
 
-            using (var server = new TestServer(builder))
+            using (TestServer server = new TestServer(builder))
             {
-                var client = server.CreateClient();
+                HttpClient client = server.CreateClient();
 
-                HttpResponseMessage response = await client.GetAsync("/_monitor/deep");
-                Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-                var msg = await response.Content.ReadAsStringAsync();
-                Assert.NotEqual(string.Empty, msg);
+                HttpResponseMessage response = await client.GetAsync($"{RoutePrefix}/_monitor/shallow");
+                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+                response = await client.GetAsync($"{RoutePrefix}/_monitor/deep");
+                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+                string message = await response.Content.ReadAsStringAsync();
+                Assert.Equal(string.Empty, message);
             }
         }
 
         private static Func<IHealthCheckService> GetHealthCheckServiceFactoryFor(Func<Task> checkHealthAsync)
         {
-            var mockHealthCheckService = Substitute.For<IHealthCheckService>();
+            IHealthCheckService mockHealthCheckService = Substitute.For<IHealthCheckService>();
             mockHealthCheckService.CheckHealthAsync().Returns(checkHealthAsync());
-            Func<IHealthCheckService> HealthCheckServiceFactory = () => mockHealthCheckService;
+            IHealthCheckService HealthCheckServiceFactory() => mockHealthCheckService;
             return HealthCheckServiceFactory;
         }
 
         private static Task SuccessHealthCheckAsync()
         {
             return Task.CompletedTask;
-        }
-
-        private static Task FailureHealthCheckAsync()
-        {
-            return Task.FromException(new Exception());
-        }
-    }
-
-    internal class MockMonitoringMiddleware : MonitoringMiddleware
-    {
-        public MockMonitoringMiddleware(RequestDelegate next, string routePrefix = null, Func<IHealthCheckService> healthCheckServiceFactory = null)
-            : base(next, routePrefix, healthCheckServiceFactory)
-        {
         }
     }
 }
